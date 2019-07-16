@@ -8,6 +8,9 @@ const Country = {
     search(term) {
         return AXIOS.get(`/search-country?term=${term}`, { headers: headers() });
     },
+    getSlots() {
+        return AXIOS.get("/slots", { headers: headers() });
+    },
 };
 
 export default Country;

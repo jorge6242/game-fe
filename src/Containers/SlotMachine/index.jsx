@@ -3,8 +3,8 @@ import { connect } from "react-redux";
 import { withStyles } from "@material-ui/core/styles";
 import Button from "@material-ui/core/Button";
 import { Grid } from "@material-ui/core";
-import { updateCurrency } from '../../Actions/slotMachineActions';
-import snackBarStatus from '../../Actions/snackbarActions';
+import { updateCurrency, getSlots } from "../../Actions/slotMachineActions";
+import snackBarStatus from "../../Actions/snackbarActions";
 import "./index.sass";
 
 const styles = theme => ({
@@ -12,45 +12,52 @@ const styles = theme => ({
     width: "100%",
     marginTop: theme.spacing.unit * 3,
     overflowX: "auto"
-  },
+  }
 });
+
+const dataDummy = {
+  dummy1: [
+    "cherry",
+    "lemon",
+    "apple",
+    "lemon",
+    "banana",
+    "banana",
+    "lemon",
+    "lemon"
+  ],
+  dummy2: [
+    "lemon",
+    "apple",
+    "lemon",
+    "lemon",
+    "cherry",
+    "apple",
+    "banana",
+    "lemon"
+  ],
+  dummy3: [
+    "lemon",
+    "apple",
+    "lemon",
+    "apple",
+    "cherry",
+    "lemon",
+    "banana",
+    "lemon"
+  ]
+};
 
 class SlotMachine extends Component {
   state = {
-    reel1: [
-      "cherry",
-      "lemon",
-      "apple",
-      "lemon",
-      "banana",
-      "banana",
-      "lemon",
-      "lemon"
-    ],
-    reel2: [
-      "lemon",
-      "apple",
-      "lemon",
-      "lemon",
-      "cherry",
-      "apple",
-      "banana",
-      "lemon"
-    ],
-    reel3: [
-      "lemon",
-      "apple",
-      "lemon",
-      "apple",
-      "cherry",
-      "lemon",
-      "banana",
-      "lemon"
-    ],
     simpleWin: false,
     onlyTwoWin: false,
     reference: ""
   };
+
+  componentWillMount() {
+    this.props.getSlots();
+  }
 
   /**
    * Get new ramdom values from array
@@ -73,14 +80,16 @@ class SlotMachine extends Component {
    * Handle to start Slot Machine
    */
   handlePull = () => {
-    const { reel1, reel2, reel3 } = this.state;
-    this.setState({
-      reel1: this.getRamdom(reel1),
-      reel2: this.getRamdom(reel2),
-      reel3: this.getRamdom(reel3)
+    const { reel1, reel2, reel3 } = this.props.slots;
+    this.props.getSlots().then(() => {
+      this.setState({
+        reel1: this.getRamdom(reel1),
+        reel2: this.getRamdom(reel2),
+        reel3: this.getRamdom(reel3)
+      });
+      this.getRules();
+      this.forceUpdate();
     });
-    this.getRules();
-    this.forceUpdate();
   };
 
   /**
@@ -89,16 +98,27 @@ class SlotMachine extends Component {
    * to win
    */
   renderSlot = (fruit, index, position) => {
-    const { simpleWin, onlyTwoWin, reference, reel1, reel2, reel3 } = this.state;
+    const {
+      simpleWin,
+      onlyTwoWin,
+      reference,
+      reel1,
+      reel2,
+      reel3
+    } = this.state;
     let show = false;
     if (onlyTwoWin && position === 1 && reel1[3] === reel2[3]) {
-      show = true
+      show = true;
     }
-    if (onlyTwoWin && position === 2 && ((reel1[3] === reel2[3]) || (reel2[3] === reel3[3]))) {
-      show = true
+    if (
+      onlyTwoWin &&
+      position === 2 &&
+      (reel1[3] === reel2[3] || reel2[3] === reel3[3])
+    ) {
+      show = true;
     }
     if (onlyTwoWin && position === 3 && reel2[3] === reel3[3]) {
-      show = true
+      show = true;
     }
     return (
       <Grid key={index} container spacing={0}>
@@ -122,15 +142,15 @@ class SlotMachine extends Component {
    * Handle to custom message is the user win or lose
    */
   displayMessage = (title, type) => {
-    this.props.snackBarStatus({ 
+    this.props.snackBarStatus({
       payload: {
-          title,
-          type,
-          enable: true,
-      },
+        title,
+        type,
+        enable: true
+      }
     });
-  }
-  
+  };
+
   /**
    * Find possible duplicated for rules of two fruits
    */
@@ -142,12 +162,12 @@ class SlotMachine extends Component {
    */
   getRules = () => {
     const { currency } = this.props;
-    const { reel1, reel2, reel3 } = this.state;
+    const { reel1, reel2, reel3 } = this.props.slots;
     const isDouble = this.findDuplicates([reel1[3], reel2[3], reel3[3]]);
-    
-  /**
-   * Conditions for three possibble combination fruits
-   */
+
+    /**
+     * Conditions for three possibble combination fruits
+     */
     if (
       reel1[3] === "cherry" &&
       reel2[3] === "cherry" &&
@@ -155,66 +175,65 @@ class SlotMachine extends Component {
     ) {
       this.setState({ simpleWin: true, onlyTwoWin: false, reference: "" });
       this.props.updateCurrency(currency + 50);
-      this.displayMessage('You won 50 Coins!', 'success');
-      
+      this.displayMessage("You won 50 Coins!", "success");
     } else if (
       reel1[3] === "apple" &&
       reel2[3] === "apple" &&
       reel3[3] === "apple"
     ) {
-      this.setState({ simpleWin: true, onlyTwoWin: false, reference: ""});
+      this.setState({ simpleWin: true, onlyTwoWin: false, reference: "" });
       this.props.updateCurrency(currency + 20);
-      this.displayMessage('You won 20 Coins!', 'success');
+      this.displayMessage("You won 20 Coins!", "success");
     } else if (
       reel1[3] === "lemon" &&
       reel2[3] === "lemon" &&
       reel3[3] === "lemon"
     ) {
-      this.setState({ simpleWin: true, onlyTwoWin: false, reference: ""});
+      this.setState({ simpleWin: true, onlyTwoWin: false, reference: "" });
       this.props.updateCurrency(currency + 3);
-      this.displayMessage('You won 3 Coins!', 'success');
+      this.displayMessage("You won 3 Coins!", "success");
     } else if (
       reel1[3] === "banana" &&
       reel2[3] === "banana" &&
       reel3[3] === "banana"
     ) {
-      this.setState({ simpleWin: true, onlyTwoWin: false, reference: ""});
+      this.setState({ simpleWin: true, onlyTwoWin: false, reference: "" });
       this.props.updateCurrency(currency + 15);
-      this.displayMessage('You won 15 Coins!', 'success');
-    } 
-  /**
-   * Conditions for two possibble combination fruits
-   */
-    else if (isDouble.length === 1 && isDouble[0] !== 'lemon') {
+      this.displayMessage("You won 15 Coins!", "success");
+    } else if (isDouble.length === 1 && isDouble[0] !== "lemon") {
+      /**
+       * Conditions for two possibble combination fruits
+       */
       this.setState({
         onlyTwoWin: true,
         simpleWin: false,
-        reference: isDouble[0],
+        reference: isDouble[0]
       });
-      if (isDouble[0] === 'cherry') {
+      if (isDouble[0] === "cherry") {
         this.props.updateCurrency(currency + 40);
-        this.displayMessage('You won 40 Coins!', 'success');
+        this.displayMessage("You won 40 Coins!", "success");
       }
-      if (isDouble[0] === 'apple') {
+      if (isDouble[0] === "apple") {
         this.props.updateCurrency(currency + 10);
-        this.displayMessage('You won 10 Coins!', 'success');
+        this.displayMessage("You won 10 Coins!", "success");
       }
-      if (isDouble[0] === 'banana') {
+      if (isDouble[0] === "banana") {
         this.props.updateCurrency(currency + 5);
-        this.displayMessage('You won 5 Coins!', 'success');
+        this.displayMessage("You won 5 Coins!", "success");
       }
       this.forceUpdate();
     } else {
-      this.setState({ simpleWin: false, onlyTwoWin: false, reference: ""});
+      this.setState({ simpleWin: false, onlyTwoWin: false, reference: "" });
       this.props.updateCurrency(currency - 1);
-      this.displayMessage('You lose 1 Coin!', 'error');
+      this.displayMessage("You lose 1 Coin!", "error");
     }
     this.forceUpdate();
   };
 
   render() {
-    const { currency } = this.props;
-    const { reel1, reel2, reel3 } = this.state;
+    const { currency, slots, isLoading } = this.props;
+    const { dummy1, dummy2, dummy3 } = dataDummy;
+    const { reel1, reel2, reel3 } = slots;
     return (
       <Grid container spacing={0} id="slot-container">
         <Grid item xs={6} className="title">
@@ -223,18 +242,37 @@ class SlotMachine extends Component {
         <Grid item xs={6} className="currency">
           {currency} Coins
         </Grid>
-        <Grid container spacing={0}>
-          <Grid item xs={4}>
-            {reel1.map((fruit, index) => this.renderSlot(fruit, index,1))}
+        {isLoading ? (
+          <Grid container spacing={0}>
+            <Grid item xs={4} className={`${isLoading ? "spin-active" : ""}`}>
+              {dummy1.map((fruit, index) => this.renderSlot(fruit, index, 1))}
+            </Grid>
+            <Grid item xs={4} className={`${isLoading ? "spin-active" : ""}`}>
+              {dummy2.map((fruit, index) => this.renderSlot(fruit, index, 2))}
+            </Grid>
+            <Grid item xs={4} className={`${isLoading ? "spin-active" : ""}`}>
+              {dummy3.map((fruit, index) => this.renderSlot(fruit, index, 3))}
+            </Grid>
           </Grid>
-          <Grid item xs={4}>
-            {reel2.map((fruit, index) => this.renderSlot(fruit, index,2))}
+        ) : (
+          <Grid container spacing={0}>
+            <Grid item xs={4}>
+              {reel1.map((fruit, index) => this.renderSlot(fruit, index, 1))}
+            </Grid>
+            <Grid item xs={4}>
+              {reel2.map((fruit, index) => this.renderSlot(fruit, index, 2))}
+            </Grid>
+            <Grid item xs={4}>
+              {reel3.map((fruit, index) => this.renderSlot(fruit, index, 3))}
+            </Grid>
           </Grid>
-          <Grid item xs={4}>
-            {reel3.map((fruit, index) => this.renderSlot(fruit, index,3))}
-          </Grid>
-        </Grid>
-        <Grid item xs={12} className="button-container" onClick={() => this.handlePull()}>
+        )}
+        <Grid
+          item
+          xs={12}
+          className="button-container"
+          onClick={() => this.handlePull()}
+        >
           <Button variant="contained" color="primary">
             Pull
           </Button>
@@ -242,16 +280,21 @@ class SlotMachine extends Component {
       </Grid>
     );
   }
-};
+}
 
-const mS = ({ slotMachineReducer: { currency } }) => ({ currency });
+const mS = ({ slotMachineReducer: { currency, slots, isLoading } }) => ({
+  currency,
+  slots,
+  isLoading
+});
 
 const mD = {
   updateCurrency,
   snackBarStatus,
-}
+  getSlots
+};
 
 export default connect(
   mS,
-  mD,
+  mD
 )(withStyles(styles)(SlotMachine));
