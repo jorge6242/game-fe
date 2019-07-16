@@ -4,7 +4,7 @@ import {
 } from 'axios-progress-bar';
 
 const AXIOS = axios.create({
-    baseURL: 'http://localhost:18081',
+    baseURL: 'https://jorge6242-casino-api.herokuapp.com',
     headers: {
         'Content-Type': 'application/json',
     },
