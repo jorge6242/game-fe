@@ -16,10 +16,6 @@ const styles = theme => ({
   table: {
     minWidth: 700
   },
-  checkoutContainer: {
-    textAlign: "right",
-    marginTop: 20
-  }
 });
 
 class Countries extends Component {
